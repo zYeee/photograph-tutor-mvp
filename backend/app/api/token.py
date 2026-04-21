@@ -17,4 +17,4 @@ async def get_token(
         .with_grants(VideoGrants(room_join=True, room=room))
         .to_jwt()
     )
-    return {"token": token, "url": settings.livekit_url}
+    return {"token": token, "url": settings.livekit_public_url}

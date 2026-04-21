@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.curriculum import TOPICS as CURRICULUM_TOPICS
 from app.database import get_db
 from app.models import Session, SessionTopic, Topic
 
@@ -58,6 +59,31 @@ async def mark_topic_complete(session_id: int, slug: str, db: AsyncSession = Dep
         status_code=http_status,
         content={"session_id": session_id, "topic_slug": slug, "already_complete": already_complete},
     )
+
+
+@router.get("/sessions/{session_id}/next-topic")
+async def get_next_topic(session_id: int, db: AsyncSession = Depends(get_db)):
+    session = await db.get(Session, session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    covered_result = await db.execute(
+        select(Topic.slug)
+        .join(SessionTopic, SessionTopic.topic_id == Topic.id)
+        .where(SessionTopic.session_id == session_id)
+    )
+    covered_slugs = {row[0] for row in covered_result.all()}
+
+    candidates = [
+        t for t in CURRICULUM_TOPICS
+        if t.get("level") == session.user_level and t["slug"] not in covered_slugs
+    ]
+    candidates.sort(key=lambda t: t["curriculum_order"])
+
+    if not candidates:
+        return {"next_topic": None}
+
+    return {"next_topic": candidates[0]}
 
 
 @router.get("/sessions/{session_id}/topics")

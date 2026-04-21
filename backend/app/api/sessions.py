@@ -9,8 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models import Session, Topic
+from app.settings import settings
 
 router = APIRouter()
+
+AGENT_NAME = "photo-tutor"
 
 
 class SessionCreate(BaseModel):
@@ -23,6 +26,11 @@ class SessionCreate(BaseModel):
 
 class SessionClose(BaseModel):
     summary: Optional[str] = None
+
+
+class SessionPatch(BaseModel):
+    user_level: Optional[str] = None
+    equipment_type: Optional[str] = None
 
 
 def _session_row(session: Session, last_topic: Optional[str]) -> dict:
@@ -54,7 +62,25 @@ async def create_session(body: SessionCreate, db: AsyncSession = Depends(get_db)
         if "unique" in msg or "livekit_room_name" in msg:
             raise HTTPException(status_code=409, detail="livekit_room_name already exists")
         raise HTTPException(status_code=422, detail=str(e.orig))
+
+    await _dispatch_agent(body.livekit_room_name)
     return _session_row(session, None)
+
+
+async def _dispatch_agent(room_name: str) -> None:
+    try:
+        from livekit.api import LiveKitAPI, CreateAgentDispatchRequest
+        async with LiveKitAPI(
+            url=settings.livekit_url,
+            api_key=settings.livekit_api_key,
+            api_secret=settings.livekit_api_secret,
+        ) as lk:
+            await lk.agent_dispatch.create_dispatch(
+                CreateAgentDispatchRequest(agent_name=AGENT_NAME, room=room_name)
+            )
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).warning("Agent dispatch failed for room %s: %s", room_name, exc)
 
 
 @router.get("/sessions")
@@ -69,6 +95,20 @@ async def list_sessions(user_id: int, db: AsyncSession = Depends(get_db)):
     return [_session_row(s, last_topic) for s, last_topic in rows]
 
 
+@router.get("/sessions/lookup")
+async def lookup_session(livekit_room_name: str, db: AsyncSession = Depends(get_db)):
+    stmt = (
+        select(Session, Topic.title.label("last_topic"))
+        .outerjoin(Topic, Session.last_topic_id == Topic.id)
+        .where(Session.livekit_room_name == livekit_room_name)
+    )
+    row = (await db.execute(stmt)).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    session, last_topic = row
+    return _session_row(session, last_topic)
+
+
 @router.get("/sessions/{session_id}")
 async def get_session(session_id: int, db: AsyncSession = Depends(get_db)):
     stmt = (
@@ -81,6 +121,20 @@ async def get_session(session_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Session not found")
     session, last_topic = row
     return _session_row(session, last_topic)
+
+
+@router.patch("/sessions/{session_id}", response_model=None)
+async def patch_session(session_id: int, body: SessionPatch, db: AsyncSession = Depends(get_db)):
+    result = await db.get(Session, session_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if body.user_level is not None:
+        result.user_level = body.user_level
+    if body.equipment_type is not None:
+        result.equipment_type = body.equipment_type
+    await db.commit()
+    await db.refresh(result)
+    return _session_row(result, None)
 
 
 @router.patch("/sessions/{session_id}/close")

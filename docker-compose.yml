@@ -19,6 +19,7 @@ services:
     build: ./backend
     volumes:
       - ./backend:/app
+      - backend-venv:/app/.venv
       - db-data:/app/db
     ports:
       - "8000:8000"
@@ -29,6 +30,22 @@ services:
     depends_on:
       livekit:
         condition: service_healthy
+
+  agent:
+    build: ./backend
+    command: uv run python agent.py dev
+    volumes:
+      - ./backend:/app
+    env_file:
+      - .env
+    environment:
+      - LIVEKIT_URL=ws://livekit:7880
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      livekit:
+        condition: service_healthy
+      backend:
+        condition: service_started
 
   frontend:
     build: ./frontend
@@ -44,6 +61,7 @@ services:
 
 volumes:
   db-data:
+  backend-venv:
 
 networks:
   default:
