@@ -1,0 +1,37 @@
+# openspec/config.yaml
+
+schema: spec-driven
+
+context: |
+  Project: Real-time voice AI photography tutor
+  
+  Tech stack:
+  - Backend: Python, FastAPI, LiveKit Agents SDK
+  - Frontend: React, LiveKit JS SDK
+  - Database: PostgreSQL
+  - Voice: OpenAI Whisper (STT), GPT-4o (LLM), OpenAI TTS
+  - Infrastructure: Docker Compose
+  
+  Architecture:
+  - Monorepo with /backend and /frontend directories
+  - LiveKit handles real-time voice sessions
+  - PostgreSQL stores sessions, messages, learning progress
+  - Each LiveKit Room maps to one user session
+  
+  Key constraints:
+  - Must run with: docker compose up
+  - Requires .env file (see .env.example)
+  - Two interaction modes: structured learning and scene advice
+
+rules:
+  proposal:
+    - State which other propose this depends on
+    - Define clear acceptance criteria
+  design:
+    - Include sequence diagrams for voice pipeline flows
+    - Separate session management, conversation handling, voice/AI layer
+  tasks:
+    - Each task must be independently verifiable
+    - Include docker/env changes if needed
+  specs:
+    - Use Given/When/Then format for user scenarios
