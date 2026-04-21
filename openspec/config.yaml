@@ -33,5 +33,6 @@ rules:
   tasks:
     - Each task must be independently verifiable
     - Include docker/env changes if needed
+    - After all tasks complete, run /commit with the change name as commit tag
   specs:
     - Use Given/When/Then format for user scenarios
