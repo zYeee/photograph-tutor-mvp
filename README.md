@@ -1,2 +1,186 @@
 # photograph-tutor-mvp
-MVP for photograph-tutor
+
+Real-time voice AI photography tutor — monorepo with Python backend, React frontend, and LiveKit for voice sessions.
+
+## System Requirements
+
+| Dependency | Minimum Version |
+|------------|-----------------|
+| Docker | 24.0 |
+| Docker Compose (plugin) | 2.20 |
+
+Verify with:
+
+```bash
+docker --version
+docker compose version
+```
+
+> Use `docker compose` (plugin syntax). The legacy `docker-compose` standalone binary is not supported.
+
+## Environment Setup
+
+1. Copy the example env file:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Open `.env` and fill in the values below:
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `LIVEKIT_URL` | Optional | `ws://localhost:7880` | LiveKit server WebSocket URL |
+| `LIVEKIT_API_KEY` | Optional | `devkey` | LiveKit API key (matches `livekit.yaml`) |
+| `LIVEKIT_API_SECRET` | Optional | `devsecret` | LiveKit API secret |
+| `OPENAI_API_KEY` | **Required** | — | OpenAI key; required for AI voice features |
+| `DATABASE_URL` | Optional | `sqlite+aiosqlite:///./db/local.db` | SQLAlchemy connection string |
+| `VITE_BACKEND_URL` | Optional | `http://localhost:8000` | Backend URL used by the browser |
+
+3. Start all services:
+
+   ```bash
+   make up
+   ```
+
+## Service URLs
+
+| Service | URL | Notes |
+|---------|-----|-------|
+| Frontend | http://localhost:5173 | React dev server (Vite) |
+| Backend | http://localhost:8000 | FastAPI |
+| Backend health | http://localhost:8000/health | Returns `{"status":"ok"}` |
+| LiveKit | ws://localhost:7880 | WebSocket endpoint |
+
+## Architecture Overview
+
+Five services run locally via Docker Compose. The browser connects to the React frontend, which communicates with the FastAPI backend over HTTP and with LiveKit over WebSocket/WebRTC. A separate LiveKit Agent process joins each room to handle AI voice processing.
+
+```mermaid
+graph TD
+    Browser["Browser"]
+    Frontend["Frontend\n(Vite / React)"]
+    Backend["Backend\n(FastAPI)"]
+    Agent["Agent\n(LiveKit Agents SDK)"]
+    LiveKit["LiveKit Server"]
+    DB[("SQLite")]
+
+    Browser -->|"HTTP"| Frontend
+    Browser -->|"WebSocket / WebRTC"| LiveKit
+    Frontend -->|"HTTP REST"| Backend
+    Frontend -->|"LiveKit JS SDK"| LiveKit
+    Agent -->|"LiveKit Agents SDK"| LiveKit
+    Agent -->|"HTTP REST"| Backend
+    Backend -->|"SQL"| DB
+```
+
+## Database Schema
+
+The six critical tables. Foreign keys use crow's-foot notation (one-to-many: `||--o{`, one-to-one: `||--||`).
+
+```mermaid
+erDiagram
+    USERS {
+        int id PK
+        string email
+        string display_name
+        datetime created_at
+    }
+
+    SESSIONS {
+        int id PK
+        int user_id FK
+        string livekit_room_name
+        string mode
+        string user_level
+        string equipment_type
+        int last_topic_id FK
+        datetime started_at
+        datetime ended_at
+    }
+
+    MESSAGES {
+        int id PK
+        int session_id FK
+        string role
+        text content
+        datetime created_at
+    }
+
+    TOPICS {
+        int id PK
+        string slug
+        string title
+        int parent_id FK
+        int difficulty
+        int sort_order
+    }
+
+    SESSION_TOPICS {
+        int id PK
+        int session_id FK
+        int topic_id FK
+        datetime completed_at
+    }
+
+    USER_TOPIC_PROGRESS {
+        int id PK
+        int user_id FK
+        int topic_id FK
+        string status
+        float proficiency
+        datetime last_visited_at
+    }
+
+    USERS ||--o{ SESSIONS : "has"
+    USERS ||--o{ USER_TOPIC_PROGRESS : "tracks"
+    SESSIONS ||--o{ MESSAGES : "contains"
+    SESSIONS ||--o{ SESSION_TOPICS : "covers"
+    TOPICS ||--o{ SESSION_TOPICS : "covered in"
+    TOPICS ||--o{ USER_TOPIC_PROGRESS : "tracked by"
+    TOPICS ||--o{ TOPICS : "parent"
+    SESSIONS }o--|| TOPICS : "last_topic"
+```
+
+## Common Commands
+
+```bash
+make up       # Start all services (detached)
+make down     # Stop all services
+make logs     # Tail logs from all services
+make build    # Rebuild Docker images
+
+# Backend only
+cd backend && uv sync                                    # Install Python deps locally
+cd backend && uv run uvicorn app.main:app --reload       # Run without Docker
+
+# Frontend only
+cd frontend && npm install    # Install Node deps
+cd frontend && npm run dev    # Run without Docker
+```
+
+## Directory Layout
+
+```
+/
+├── backend/          # Python FastAPI app (uv, SQLAlchemy, LiveKit Agents SDK)
+│   ├── app/          # Application package
+│   │   ├── api/      # Route handlers
+│   │   ├── main.py   # FastAPI entry point
+│   │   ├── settings.py
+│   │   └── database.py
+│   ├── agent.py      # LiveKit agent entry point
+│   ├── Dockerfile
+│   └── pyproject.toml
+├── frontend/         # React + Vite app (LiveKit JS SDK)
+│   ├── src/
+│   │   ├── components/
+│   │   └── App.tsx
+│   ├── Dockerfile
+│   └── package.json
+├── docker-compose.yml
+├── livekit.yaml      # LiveKit dev server config
+├── .env.example      # Copy to .env and fill in values
+├── Makefile
+└── CLAUDE.md
+```
