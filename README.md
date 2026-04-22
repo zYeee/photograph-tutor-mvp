@@ -17,7 +17,7 @@ Real-time voice AI photography tutor — monorepo with Python backend, React fro
    cp .env.example .env
    ```
 
-2. Open `.env` and fill in the values below (only OPENAI_API_KEY need to be set if it's ran in docker):
+2. Open `.env` and fill in the values below (**only OPENAI_API_KEY need to be set if it's ran in docker**):
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
@@ -176,3 +176,30 @@ cd frontend && npm run dev    # Run without Docker
 ├── Makefile
 └── CLAUDE.md
 ```
+
+## Key Design Decisions & Trade Offs
+### Separate the Agent component as independent deployment.
+* cons: need to maintain the additional deployment.
+* pros: decouple the logic from the main app. If the agent crashes, the FastAPI server keeps running (and vice versa). Makeing it possible to only scale out the agent capability, to support more chat rooms.
+### Message Polling vs Push (current is polling every 2s)
+* cons: Wasteful at scale: 1,000 concurrent sessions = 500 requests/second; Up to 2 seconds of visible lag between the agent speaking and the transcript updating
+* pros: 
+  - Dead simple: one React Query config line
+  - Works everywhere, no extra infrastructure
+  - Resilient: if a message is missed, the next poll catches it
+
+
+
+## Scaling Considerations
+
+  * **Horizontal scaling**: The backend and agent services are stateless and can each scale out independently behind a load balancer. 
+
+  * **Database**: Replace SQLite with PostgreSQL/MySQL and introduce read replicas to separate read and write traffic.
+
+  * **Caching**: Add a Redis layer in front of the database for frequently read data (session context, topic lists). This reduces DB load and cuts agent startup latency.
+
+  * **Conversation history**: The current approach loads the last 50 messages raw on every session join. At scale, introduce one of: (1) summarization, compress older turns into a single context block, or (2) RAG, embed and index message history, retrieve only semantically relevant turns per user input.
+
+  * **Transcript delivery**: Replace the 2-second polling interval with push-based delivery via the LiveKit data channel, so the frontend only receives data when something actually changes.
+
+  * **Pagination** — Add `limit`/`offset` or cursor-based pagination to `GET /api/sessions/{id}/messages` to avoid returning unbounded result sets as sessions grow long.
