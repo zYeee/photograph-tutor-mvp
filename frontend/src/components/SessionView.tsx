@@ -81,7 +81,15 @@ function ActiveSession({ sessionId, userId }: { sessionId: number; userId: numbe
       const next = new Map(prev)
       for (const seg of segments) {
         if (seg.final) {
-          next.delete(seg.id)
+          // Keep the final segment briefly to bridge the gap until the next poll
+          next.set(seg.id, { text: seg.text, role })
+          setTimeout(() => {
+            setStreamingSegments((current) => {
+              const updated = new Map(current)
+              updated.delete(seg.id)
+              return updated
+            })
+          }, 3000)
         } else {
           next.set(seg.id, { text: seg.text, role })
         }

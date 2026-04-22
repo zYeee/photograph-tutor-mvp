@@ -28,7 +28,7 @@ export function Transcript({ sessionId, isConnected, streamingPreviews = [] }: P
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages?.length, streamingPreviews.length])
+  }, [messages?.length, streamingPreviewsToDisplay.length])
 
   if (!hasContent) {
     return (
@@ -38,6 +38,13 @@ export function Transcript({ sessionId, isConnected, streamingPreviews = [] }: P
     )
   }
 
+  const streamingPreviewsToDisplay = streamingPreviews.filter((preview) => {
+    // If a persistent message already ends with or contains this text, skip the preview
+    return !messages?.some(
+      (m) => m.role === preview.role && m.content.includes(preview.text.trim()),
+    )
+  })
+
   return (
     <div className="transcript">
       {messages?.map((msg) => (
@@ -46,7 +53,7 @@ export function Transcript({ sessionId, isConnected, streamingPreviews = [] }: P
           <p className="bubble-content">{msg.content}</p>
         </div>
       ))}
-      {streamingPreviews.map((seg, i) => (
+      {streamingPreviewsToDisplay.map((seg, i) => (
         <div key={`stream-${i}`} className={`bubble bubble--${seg.role} bubble--streaming`}>
           <span className="bubble-role">{seg.role === 'user' ? 'You' : 'Tutor'}</span>
           <p className="bubble-content">{seg.text}<span className="bubble-cursor" /></p>
