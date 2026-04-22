@@ -63,7 +63,6 @@ async def create_session(body: SessionCreate, db: AsyncSession = Depends(get_db)
             raise HTTPException(status_code=409, detail="livekit_room_name already exists")
         raise HTTPException(status_code=422, detail=str(e.orig))
 
-    await dispatch_agent(body.livekit_room_name)
     return _session_row(session, None)
 
 
