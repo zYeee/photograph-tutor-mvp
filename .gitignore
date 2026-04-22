@@ -25,6 +25,9 @@ frontend/.vite/
 # OS
 .DS_Store
 Thumbs.db
+.gemini
+backend/db/
+
 
 # IDE
 .idea/
