@@ -31,6 +31,7 @@ class SessionClose(BaseModel):
 class SessionPatch(BaseModel):
     user_level: Optional[str] = None
     equipment_type: Optional[str] = None
+    current_topic_slug: Optional[str] = None
 
 
 def _session_row(session: Session, last_topic: Optional[str]) -> dict:
@@ -131,6 +132,11 @@ async def patch_session(session_id: int, body: SessionPatch, db: AsyncSession = 
         result.user_level = body.user_level
     if body.equipment_type is not None:
         result.equipment_type = body.equipment_type
+    if body.current_topic_slug is not None:
+        topic_result = await db.execute(select(Topic).where(Topic.slug == body.current_topic_slug))
+        topic = topic_result.scalar_one_or_none()
+        if topic is not None:
+            result.last_topic_id = topic.id
     await db.commit()
     await db.refresh(result)
     return _session_row(result, None)

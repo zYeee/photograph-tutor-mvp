@@ -265,6 +265,7 @@ async def entrypoint(ctx: JobContext) -> None:
 
         current_topic_slug = topic_data["slug"]
         await _put(f"/api/users/{user_id}/progress/{current_topic_slug}", {"status": "in_progress"})
+        await _patch(f"/api/sessions/{session_id}", {"current_topic_slug": current_topic_slug})
 
         points = "\n".join(f"- {p}" for p in topic_data.get("teaching_points", []))
         return (
