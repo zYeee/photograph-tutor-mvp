@@ -95,8 +95,10 @@ def _build_system_prompt(session: dict, next_topic: Optional[dict]) -> str:
         "You are a patient, encouraging photography tutor. "
         "Guide the student through the current topic step by step, "
         "using clear explanations and practical examples. "
-        "CRITICAL: If the user asks about available topics or lessons, you MUST use the list_curriculum_topics tool. "
-        "You are FORBIDDEN from mentioning any topic that is not returned by the tool. "
+        "If the user asks about available topics or lessons, you MUST use the list_curriculum_topics tool. "
+        "Once you are confident the student has understood the current topic, call the complete_current_topic tool "
+        "to mark it as finished before moving on to the next one. "
+        "You are FORBIDDEN from mentioning any topic that is not returned by the list_curriculum_topics tool. "
         "When responding, use the exact titles and descriptions from the tool output only. "
         "If the tool returns an empty list, say you don't have any specific lessons for that level yet. "
         "Keep responses concise and conversational — this is a voice interaction."
@@ -247,6 +249,39 @@ async def entrypoint(ctx: JobContext) -> None:
 
             return "\n".join(lines)
 
+    @function_tool
+    async def complete_current_topic(
+        _ctx: RunContext,
+    ) -> str:
+        """Call this when the student has successfully learned the current topic and you're ready to move on."""
+        nonlocal current_topic_slug
+        if not current_topic_slug:
+            return "There is no active topic to complete right now."
+
+        slug_to_finish = current_topic_slug
+        logger.info("Agent calling complete_current_topic for: %s", slug_to_finish)
+
+        await _finish_topic(session_id, user_id, slug_to_finish)
+
+        # Look up what's next
+        async with httpx.AsyncClient(timeout=10.0) as c:
+            nt = await _get(c, f"/api/sessions/{session_id}/next-topic")
+
+        next_topic_data = nt.get("next_topic") if nt and isinstance(nt, dict) else None
+        if next_topic_data:
+            current_topic_slug = next_topic_data["slug"]
+            return (
+                f"Excellent work! We've officially completed the topic on {slug_to_finish.replace('-', ' ').title()}. "
+                f"Our next lesson will be: {next_topic_data['title']}. Shall we begin?"
+            )
+
+        current_topic_slug = None
+        return (
+            f"Great job! You've finished {slug_to_finish.replace('-', ' ').title()}. "
+            "You've actually completed all the current lessons for your level! "
+            "Is there anything else photography-related you'd like to discuss?"
+        )
+
     # ── build agent and session ───────────────────────────────────────────────
 
     from livekit.plugins.openai import LLM, STT, TTS
@@ -259,7 +294,7 @@ async def entrypoint(ctx: JobContext) -> None:
         llm=LLM(model="gpt-4o"),
         tts=TTS(),
         vad=VAD.load(),
-        tools=[update_user_level, list_curriculum_topics],
+        tools=[update_user_level, list_curriculum_topics, complete_current_topic],
     )
 
     agent_session = AgentSession(userdata={"session_id": session_id, "user_id": user_id})
