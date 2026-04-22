@@ -337,19 +337,17 @@ async def entrypoint(ctx: JobContext) -> None:
         async with httpx.AsyncClient(timeout=10.0) as c:
             nt = await _get(c, f"/api/sessions/{session_id}/next-topic")
 
+        current_topic_slug = None
         next_topic_data = nt.get("next_topic") if nt and isinstance(nt, dict) else None
         if next_topic_data:
-            current_topic_slug = next_topic_data["slug"]
-            await _put(f"/api/users/{user_id}/progress/{current_topic_slug}", {"status": "in_progress"})
             return (
-                f"Excellent work! We've officially completed the topic on {slug_to_finish.replace('-', ' ').title()}. "
-                f"Our next lesson will be: {next_topic_data['title']}. Shall we begin?"
+                f"Excellent work! You've completed {slug_to_finish.replace('-', ' ').title()}. "
+                f"Up next is: {next_topic_data['title']}. Would you like to start it now?"
             )
 
-        current_topic_slug = None
         return (
             f"Great job! You've finished {slug_to_finish.replace('-', ' ').title()}. "
-            "You've actually completed all the current lessons for your level! "
+            "You've completed all the current lessons for your level! "
             "Is there anything else photography-related you'd like to discuss?"
         )
 
