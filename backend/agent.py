@@ -211,6 +211,37 @@ async def entrypoint(ctx: JobContext) -> None:
             )
         return f"Got it — {level} level, {equipment}. Let's get started with photography!"
 
+    @function_tool
+    async def list_curriculum_topics(
+        _ctx: RunContext,
+    ) -> str:
+        """Call this when the user asks to see what topics or lessons are available for their level."""
+        async with httpx.AsyncClient(timeout=10.0) as c:
+            # We want to show all topics for the current user's level
+            resp = await _get(c, "/api/topics")
+            if not resp or not isinstance(resp, list):
+                return "I'm sorry, I couldn't retrieve the list of topics right now."
+
+            # Filter for topics that belong to the user's level
+            # The /api/topics returns roots with children. We need to flatten and filter.
+            lines = [f"Here are the topics we can cover for your {user_level} level:"]
+            found = False
+            for root in resp:
+                matching_children = [
+                    child for child in root.get("children", [])
+                    if child.get("level") == user_level
+                ]
+                if matching_children:
+                    found = True
+                    lines.append(f"\n{root['title']}:")
+                    for child in matching_children:
+                        lines.append(f"- {child['title']}: {child['description']}")
+
+            if not found:
+                return f"It looks like I don't have any specific lessons categorized for the {user_level} level yet."
+
+            return "\n".join(lines)
+
     # ── build agent and session ───────────────────────────────────────────────
 
     from livekit.plugins.openai import LLM, STT, TTS
@@ -223,7 +254,7 @@ async def entrypoint(ctx: JobContext) -> None:
         llm=LLM(model="gpt-4o"),
         tts=TTS(),
         vad=VAD.load(),
-        tools=[update_user_level],
+        tools=[update_user_level, list_curriculum_topics],
     )
 
     agent_session = AgentSession(userdata={"session_id": session_id, "user_id": user_id})
