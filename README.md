@@ -1,6 +1,6 @@
 # photograph-tutor-mvp
 
-Real-time voice AI photography tutor — monorepo with Python backend, React frontend, and LiveKit for voice sessions.
+Real-time voice AI photography tutor: monorepo with Python backend, React frontend, and LiveKit for voice sessions.
 
 ## System Requirements
 
