@@ -59,11 +59,18 @@ export function StudyJourneyModal({ userId, onClose }: Props) {
   const isLoading = topicsLoading || progressLoading
   const isError = topicsError || progressError
 
-  const completedSlugs = new Set(
-    (progress ?? []).filter((p) => p.status === 'completed').map((p) => p.slug)
+  const progressBySlug = new Map(
+    (progress ?? []).map((p) => [p.slug, p.status])
   )
 
   const leafTopics = topics ? flattenLeaves(topics) : []
+
+  function topicBadge(slug: string) {
+    const status = progressBySlug.get(slug)
+    if (status === 'completed') return <span className="sj-badge sj-badge--done">✅ Done</span>
+    if (status === 'in_progress') return <span className="sj-badge sj-badge--progress">⏳ In Progress</span>
+    return null
+  }
 
   return (
     <div className="sj-overlay" ref={overlayRef} onClick={handleOverlayClick}>
@@ -93,7 +100,8 @@ export function StudyJourneyModal({ userId, onClose }: Props) {
                   <ul className="sj-topic-list">
                     {levelTopics.map((t) => (
                       <li key={t.slug} className="sj-topic-row">
-                        {completedSlugs.has(t.slug) ? '✅ ' : ''}{t.title}
+                        <span className="sj-topic-title">{t.title}</span>
+                        {topicBadge(t.slug)}
                       </li>
                     ))}
                   </ul>

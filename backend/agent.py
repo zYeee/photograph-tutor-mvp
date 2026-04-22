@@ -158,6 +158,10 @@ async def entrypoint(ctx: JobContext) -> None:
     # Track the topic being taught (mutable via nonlocal in tool)
     current_topic_slug: Optional[str] = next_topic["slug"] if next_topic else None
 
+    # Mark the current topic as in_progress when the session starts
+    if mode == "structured_learning" and current_topic_slug:
+        await _put(f"/api/users/{user_id}/progress/{current_topic_slug}", {"status": "in_progress"})
+
     # Build initial chat context from prior transcript
     chat_ctx = llm.ChatContext()
     for msg in prior_messages:
@@ -210,6 +214,7 @@ async def entrypoint(ctx: JobContext) -> None:
         first_topic = nt.get("next_topic") if nt and isinstance(nt, dict) else None  # type: ignore[union-attr]
         if first_topic:
             current_topic_slug = first_topic["slug"]
+            await _put(f"/api/users/{user_id}/progress/{current_topic_slug}", {"status": "in_progress"})
             return (
                 f"Great — I've noted that you're at the {level} level using a {equipment}. "
                 f"Let's start with our first topic: {first_topic['title']}. "
@@ -270,6 +275,7 @@ async def entrypoint(ctx: JobContext) -> None:
         next_topic_data = nt.get("next_topic") if nt and isinstance(nt, dict) else None
         if next_topic_data:
             current_topic_slug = next_topic_data["slug"]
+            await _put(f"/api/users/{user_id}/progress/{current_topic_slug}", {"status": "in_progress"})
             return (
                 f"Excellent work! We've officially completed the topic on {slug_to_finish.replace('-', ' ').title()}. "
                 f"Our next lesson will be: {next_topic_data['title']}. Shall we begin?"
@@ -317,8 +323,6 @@ async def entrypoint(ctx: JobContext) -> None:
         if text:
             _spawn(_post(f"/api/sessions/{session_id}/messages", {"role": role, "content": text}))
 
-    # ── topic completion on user disconnect ───────────────────────────────────
-
     # Keep strong references so tasks aren't GC'd before they finish.
     _background_tasks: set[asyncio.Task] = set()
 
@@ -332,17 +336,10 @@ async def entrypoint(ctx: JobContext) -> None:
         await _put(f"/api/users/{uid}/progress/{slug}", {"status": "completed"})
         logger.info("Marked topic '%s' complete for session %d", slug, sid)
 
-    def _on_participant_disconnected(*_args) -> None:
-        if mode != "structured_learning" or not current_topic_slug:
-            return
-        _spawn(_finish_topic(session_id, user_id, current_topic_slug))
-
-    ctx.room.on("participant_disconnected", _on_participant_disconnected)
-
     # ── start ─────────────────────────────────────────────────────────────────
 
     await agent_session.start(agent, room=ctx.room)
-    agent_session.generate_reply(instructions=opening)
+    agent_session.say(opening)
     try:
         await asyncio.sleep(float("inf"))
     finally:

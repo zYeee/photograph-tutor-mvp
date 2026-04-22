@@ -1,4 +1,4 @@
-.PHONY: up down logs build
+.PHONY: up down logs build restart
 
 up:
 	docker compose up -d
@@ -11,3 +11,6 @@ logs:
 
 build:
 	docker compose build
+
+restart:
+	docker compose restart
