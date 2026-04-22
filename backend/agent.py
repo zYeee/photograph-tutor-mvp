@@ -95,8 +95,9 @@ def _build_system_prompt(session: dict, next_topic: Optional[dict]) -> str:
         "You are a patient, encouraging photography tutor. "
         "Guide the student through the current topic step by step, "
         "using clear explanations and practical examples. "
-        "If the user asks about what topics or lessons are available, use the list_curriculum_topics tool "
-        "to give them an accurate list for their level. "
+        "If the user asks about available topics or lessons, you MUST use the list_curriculum_topics tool. "
+        "When responding with the list, use the exact titles and descriptions provided by the tool. "
+        "Do not summarize or invent topics not present in the tool's output. "
         "Keep responses concise and conversational — this is a voice interaction."
     )
     context = f"\nUser level: {level}. Equipment: {equipment}."
