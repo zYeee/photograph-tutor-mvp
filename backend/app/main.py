@@ -54,9 +54,22 @@ async def _seed_curriculum() -> None:
         await db.commit()
 
 
+async def _seed_user() -> None:
+    from app.models import User
+    async with AsyncSessionLocal() as db:
+        stmt = sqlite_insert(User).values(
+            id=1,
+            email="user@example.com",
+            display_name="Student",
+        ).on_conflict_do_nothing(index_elements=["id"])
+        await db.execute(stmt)
+        await db.commit()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await async_setup_db()
+    await _seed_user()
     await _seed_curriculum()
     yield
 
