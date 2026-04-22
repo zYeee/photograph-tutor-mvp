@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { LiveKitRoom, RoomAudioRenderer, useRoomContext } from '@livekit/components-react'
 import { RoomEvent, type TranscriptionSegment, type Participant } from 'livekit-client'
-import { getSession, getToken, closeSession, type Session, type TokenResponse } from '../api'
+import { getSession, getToken, closeSession, getMessages, type Session, type TokenResponse, type Message } from '../api'
 import { Transcript } from './Transcript'
 import './SessionView.css'
 
@@ -47,6 +47,13 @@ function ActiveSession({ sessionId, userId }: { sessionId: number; userId: numbe
     queryFn: () => getSession(sessionId),
     refetchInterval: connected ? 3000 : false,
   })
+
+  const { data: messages } = useQuery<Message[]>({
+    queryKey: ['messages', sessionId],
+    queryFn: () => getMessages(sessionId),
+  })
+
+  const isEmpty = !connected && (!messages || messages.length === 0)
 
   const handleConnect = useCallback(async () => {
     if (!session) return
@@ -110,13 +117,9 @@ function ActiveSession({ sessionId, userId }: { sessionId: number; userId: numbe
         </div>
         <div className="sv-topbar-controls">
           {tokenError && <span className="sv-error">{tokenError}</span>}
-          {connected ? (
+          {connected && (
             <button className="btn-disconnect" onClick={handleDisconnect}>
               End Chat
-            </button>
-          ) : (
-            <button className="btn-connect" onClick={handleConnect} disabled={connecting || !session}>
-              {connecting ? 'Connecting…' : 'Start Chat'}
             </button>
           )}
         </div>
@@ -137,11 +140,24 @@ function ActiveSession({ sessionId, userId }: { sessionId: number; userId: numbe
         </LiveKitRoom>
       )}
 
-      <Transcript
-        sessionId={sessionId}
-        isConnected={connected}
-        streamingPreviews={streamingPreviews}
-      />
+      {isEmpty ? (
+        <div className="sv-hero">
+          <button
+            className="btn-start-chat-hero"
+            onClick={handleConnect}
+            disabled={connecting || !session}
+          >
+            {connecting ? '…' : '▶'}
+          </button>
+          <p className="sv-hero-label">{connecting ? 'Connecting…' : 'Start Chat'}</p>
+        </div>
+      ) : (
+        <Transcript
+          sessionId={sessionId}
+          isConnected={connected}
+          streamingPreviews={streamingPreviews}
+        />
+      )}
     </div>
   )
 }
