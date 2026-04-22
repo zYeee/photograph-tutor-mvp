@@ -15,7 +15,9 @@ interface Props {
 }
 
 export function Transcript({ sessionId, isConnected, streamingPreviews = [] }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const userScrolledUpRef = useRef(false)
 
   const { data: messages } = useQuery<Message[]>({
     queryKey: ['messages', sessionId],
@@ -33,9 +35,21 @@ export function Transcript({ sessionId, isConnected, streamingPreviews = [] }: P
     )
   })
 
+  // Track whether the user has scrolled away from the bottom
+  function handleScroll() {
+    const el = containerRef.current
+    if (!el) return
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    userScrolledUpRef.current = distanceFromBottom > 80
+  }
+
+  // Scroll to bottom whenever messages or streaming text changes, unless user scrolled up
+  const streamingText = streamingPreviewsToDisplay.map((s) => s.text).join('')
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages?.length, streamingPreviewsToDisplay.length])
+    if (!userScrolledUpRef.current) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages?.length, streamingText])
 
   if (!hasContent) {
     return (
@@ -45,7 +59,7 @@ export function Transcript({ sessionId, isConnected, streamingPreviews = [] }: P
     )
   }
   return (
-    <div className="transcript">
+    <div className="transcript" ref={containerRef} onScroll={handleScroll}>
       {messages?.map((msg) => (
         <div key={msg.id} className={`bubble bubble--${msg.role}`}>
           <span className="bubble-role">{msg.role === 'user' ? 'You' : 'Tutor'}</span>
