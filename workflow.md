@@ -43,12 +43,11 @@ Bugs were fixed by describing the symptom directly in the Claude Code chat. Clau
 3. Make a targeted edit
 
 Examples from this project:
-- **Blank page crash** — `useDataChannel` hook used outside `<LiveKitRoom>` context; Claude
+- **Blank page crash**: `useDataChannel` hook used outside `<LiveKitRoom>` context; Claude
   refactored it into a `DataChannelReceiver` component rendered inside the LiveKit tree
-- **Duplicate agent dispatch** — agent joining rooms twice on session creation; fixed by
+- **Duplicate agent dispatch**: agent joining rooms twice on session creation; fixed by
   scoping the dispatch call correctly
-- **Transcript flicker** — streaming previews and polled messages overlapping; fixed with
+- **Transcript flicker**: streaming previews and polled messages overlapping; fixed with
   a deduplication filter in `Transcript.tsx`
-- **Topic slug mismatch** — agent LLM passing topic titles instead of slugs; fixed by adding
-  title-to-slug normalization in the tool handler
+- **Topic Status**: the topic status in study journey are not managed correctly
 
