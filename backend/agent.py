@@ -229,7 +229,6 @@ async def entrypoint(ctx: JobContext) -> None:
                 return "I'm sorry, I couldn't retrieve the list of topics right now."
 
             # Filter for topics that belong to the user's level
-            # The /api/topics returns roots with children. We need to flatten and filter.
             lines = [f"Here are the topics we can cover for your {user_level} level:"]
             found = False
             for root in resp:
@@ -239,9 +238,9 @@ async def entrypoint(ctx: JobContext) -> None:
                 ]
                 if matching_children:
                     found = True
-                    lines.append(f"\n{root['title']}:")
+                    lines.append(f"\n{root['title'].upper()}")
                     for child in matching_children:
-                        lines.append(f"- {child['title']}: {child['description']}")
+                        lines.append(f"• {child['title']}: {child['description']}")
 
             if not found:
                 return f"It looks like I don't have any specific lessons categorized for the {user_level} level yet."
