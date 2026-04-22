@@ -367,7 +367,10 @@ async def entrypoint(ctx: JobContext) -> None:
         tools=[update_user_level, list_curriculum_topics, complete_current_topic, start_topic],
     )
 
-    agent_session = AgentSession(userdata={"session_id": session_id, "user_id": user_id})
+    agent_session = AgentSession(
+        turn_handling={"interruption": {"enabled": False}},
+        userdata={"session_id": session_id, "user_id": user_id},
+    )
 
     # ── transcript persistence ────────────────────────────────────────────────
 
