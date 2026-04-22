@@ -112,11 +112,11 @@ function ActiveSession({ sessionId, userId }: { sessionId: number; userId: numbe
           {tokenError && <span className="sv-error">{tokenError}</span>}
           {connected ? (
             <button className="btn-disconnect" onClick={handleDisconnect}>
-              Disconnect
+              End Chat
             </button>
           ) : (
             <button className="btn-connect" onClick={handleConnect} disabled={connecting || !session}>
-              {connecting ? 'Connecting…' : 'Connect'}
+              {connecting ? 'Connecting…' : 'Start Chat'}
             </button>
           )}
         </div>
