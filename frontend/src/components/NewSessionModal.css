@@ -56,6 +56,68 @@
   outline-offset: 1px;
 }
 
+.mode-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.mode-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.mode-card:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.mode-card--active {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.mode-card--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.mode-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.mode-card-desc {
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 400;
+}
+
+.mode-card-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 20px;
+  background: rgba(234, 179, 8, 0.18);
+  color: #b45309;
+  border: 1px solid rgba(234, 179, 8, 0.35);
+}
+
 .modal-error {
   color: #e53e3e;
   font-size: 13px;

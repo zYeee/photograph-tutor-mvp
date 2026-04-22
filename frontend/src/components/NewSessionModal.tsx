@@ -55,13 +55,30 @@ export function NewSessionModal({ userId, onCreated, onClose }: Props) {
         <h2 className="modal-title">New session</h2>
 
         <form onSubmit={handleSubmit} className="modal-form">
-          <label className="modal-label">
+          <div className="modal-label">
             Mode
-            <select value={mode} onChange={(e) => setMode(e.target.value)} className="modal-select">
-              <option value="structured_learning">Structured Learning</option>
-              <option value="scene_advice">Scene Advice</option>
-            </select>
-          </label>
+            <div className="mode-cards">
+              <button
+                type="button"
+                className={`mode-card${mode === 'structured_learning' ? ' mode-card--active' : ''}`}
+                onClick={() => setMode('structured_learning')}
+              >
+                <span className="mode-card-title">Structured Learning</span>
+                <span className="mode-card-desc">Follow a step-by-step curriculum</span>
+              </button>
+              <button
+                type="button"
+                className="mode-card mode-card--disabled"
+                disabled
+              >
+                <span className="mode-card-title">
+                  Scene Advice
+                  <span className="mode-card-badge">Coming Soon</span>
+                </span>
+                <span className="mode-card-desc">Get advice for a specific scene</span>
+              </button>
+            </div>
+          </div>
 
           <label className="modal-label">
             Your level
