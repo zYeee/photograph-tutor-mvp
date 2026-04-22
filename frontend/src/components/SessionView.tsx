@@ -117,11 +117,6 @@ function ActiveSession({ sessionId, userId }: { sessionId: number; userId: numbe
         </div>
         <div className="sv-topbar-controls">
           {tokenError && <span className="sv-error">{tokenError}</span>}
-          {connected && (
-            <button className="btn-disconnect" onClick={handleDisconnect}>
-              End Chat
-            </button>
-          )}
         </div>
       </div>
 
@@ -157,6 +152,20 @@ function ActiveSession({ sessionId, userId }: { sessionId: number; userId: numbe
           isConnected={connected}
           streamingPreviews={streamingPreviews}
         />
+      )}
+
+      {!isEmpty && (
+        <div className="sv-bottom-bar">
+          {connected ? (
+            <button className="btn-disconnect btn-bottom" onClick={handleDisconnect}>
+              End Chat
+            </button>
+          ) : (
+            <button className="btn-connect btn-bottom" onClick={handleConnect} disabled={connecting || !session}>
+              {connecting ? 'Connecting…' : 'Start Chat'}
+            </button>
+          )}
+        </div>
       )}
     </div>
   )

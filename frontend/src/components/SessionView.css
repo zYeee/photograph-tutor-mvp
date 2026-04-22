@@ -86,6 +86,22 @@
   color: #fff;
 }
 
+.sv-bottom-bar {
+  flex-shrink: 0;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+}
+
+.btn-bottom {
+  width: 100%;
+  max-width: 360px;
+  padding: 12px 0;
+  font-size: 15px;
+  border-radius: 10px;
+}
+
 .sv-hero {
   flex: 1;
   display: flex;
