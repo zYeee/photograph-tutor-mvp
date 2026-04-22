@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { LiveKitRoom, RoomAudioRenderer, useRoomContext } from '@livekit/components-react'
 import { RoomEvent, type TranscriptionSegment, type Participant } from 'livekit-client'
@@ -167,13 +167,27 @@ function TranscriptStreamer({
 function VoiceIndicator() {
   const room = useRoomContext()
   const [agentSpeaking, setAgentSpeaking] = useState(false)
+  const silenceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     const handler = (speakers: Participant[]) => {
-      setAgentSpeaking(speakers.some((p) => p.identity !== 'user'))
+      const speaking = speakers.some((p) => p.identity !== 'user')
+      if (speaking) {
+        if (silenceTimer.current) {
+          clearTimeout(silenceTimer.current)
+          silenceTimer.current = null
+        }
+        setAgentSpeaking(true)
+      } else {
+        // Delay before switching to "Listening" to smooth over brief inter-sentence gaps
+        silenceTimer.current = setTimeout(() => setAgentSpeaking(false), 800)
+      }
     }
     room.on(RoomEvent.ActiveSpeakersChanged, handler)
-    return () => { room.off(RoomEvent.ActiveSpeakersChanged, handler) }
+    return () => {
+      room.off(RoomEvent.ActiveSpeakersChanged, handler)
+      if (silenceTimer.current) clearTimeout(silenceTimer.current)
+    }
   }, [room])
 
   return (
