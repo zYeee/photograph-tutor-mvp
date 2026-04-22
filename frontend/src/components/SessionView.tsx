@@ -73,13 +73,19 @@ function ActiveSession({ sessionId, userId }: { sessionId: number; userId: numbe
   const handleDisconnect = useCallback(async () => {
     setConnected(false)
     setTokenData(null)
-    setStreamingSegments(new Map())
+    // Don't clear streaming segments immediately — let the backend persist the
+    // final message first, then refetch so the transcript shows the full content
+    // before the preview is cleared.
     try {
       await closeSession(sessionId)
       queryClient.invalidateQueries({ queryKey: ['sessions', userId] })
     } catch {
       // session may already be closed
     }
+    setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ['messages', sessionId] })
+      setStreamingSegments(new Map())
+    }, 1500)
   }, [sessionId, userId, queryClient])
 
   const handleSegments = useCallback((segments: TranscriptionSegment[], participantIdentity: string) => {
