@@ -63,11 +63,11 @@ async def create_session(body: SessionCreate, db: AsyncSession = Depends(get_db)
             raise HTTPException(status_code=409, detail="livekit_room_name already exists")
         raise HTTPException(status_code=422, detail=str(e.orig))
 
-    await _dispatch_agent(body.livekit_room_name)
+    await dispatch_agent(body.livekit_room_name)
     return _session_row(session, None)
 
 
-async def _dispatch_agent(room_name: str) -> None:
+async def dispatch_agent(room_name: str) -> None:
     try:
         from livekit.api import LiveKitAPI, CreateAgentDispatchRequest
         async with LiveKitAPI(

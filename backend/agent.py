@@ -161,7 +161,9 @@ async def entrypoint(ctx: JobContext) -> None:
             chat_ctx.add_message(role=role, content=content)  # type: ignore[arg-type]
 
     # Opening message based on mode / intent
-    if mode == "structured_learning" and not user_level:
+    if prior_messages:
+        opening = "Welcome back! I'm ready to continue when you are."
+    elif mode == "structured_learning" and not user_level:
         opening = (
             "Hi! I'm your photography tutor. Before we dive in, I'd like to tailor the lessons to you. "
             "Could you tell me your current experience level — beginner, intermediate, or advanced? "
