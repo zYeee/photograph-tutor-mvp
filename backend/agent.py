@@ -95,6 +95,8 @@ def _build_system_prompt(session: dict, next_topic: Optional[dict]) -> str:
         "You are a patient, encouraging photography tutor. "
         "Guide the student through the current topic step by step, "
         "using clear explanations and practical examples. "
+        "If the user asks about what topics or lessons are available, use the list_curriculum_topics tool "
+        "to give them an accurate list for their level. "
         "Keep responses concise and conversational — this is a voice interaction."
     )
     context = f"\nUser level: {level}. Equipment: {equipment}."
@@ -216,6 +218,7 @@ async def entrypoint(ctx: JobContext) -> None:
         _ctx: RunContext,
     ) -> str:
         """Call this when the user asks to see what topics or lessons are available for their level."""
+        logger.info("Agent calling list_curriculum_topics for level: %s", user_level)
         async with httpx.AsyncClient(timeout=10.0) as c:
             # We want to show all topics for the current user's level
             resp = await _get(c, "/api/topics")
