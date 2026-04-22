@@ -87,6 +87,7 @@ class Topic(Base):
     slug: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     title: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    level: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     parent_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("topics.id"), nullable=True)
     difficulty: Mapped[int] = mapped_column(Integer, nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
