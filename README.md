@@ -2,6 +2,14 @@
 
 Real-time voice AI photography tutor: monorepo with Python backend, React frontend, and LiveKit for voice sessions.
 
+## Features
+
+- **Voice-first tutoring** : speak naturally; the AI tutor listens, responds, and teaches entirely through voice
+- **Structured curriculum** : topics organised by skill level (beginner / intermediate / advanced) covering exposure, composition, lighting, and more
+- **Session continuity** : conversation history is persisted and injected back into the AI context on reconnect, so the tutor remembers where you left off
+- **Study Journey** : a panel showing all curriculum topics and which ones you have completed or are in progress
+- **Real-time transcript** : live transcript updates pushed via LiveKit data channel as the tutor speaks
+
 ## System Requirements
 
 | Dependency | Minimum Version |
