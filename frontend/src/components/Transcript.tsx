@@ -26,6 +26,13 @@ export function Transcript({ sessionId, isConnected, streamingPreviews = [] }: P
 
   const hasContent = (messages && messages.length > 0) || streamingPreviews.length > 0
 
+  const streamingPreviewsToDisplay = streamingPreviews.filter((preview) => {
+    // If a persistent message already ends with or contains this text, skip the preview
+    return !messages?.some(
+      (m) => m.role === preview.role && m.content.includes(preview.text.trim()),
+    )
+  })
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages?.length, streamingPreviewsToDisplay.length])
@@ -37,14 +44,6 @@ export function Transcript({ sessionId, isConnected, streamingPreviews = [] }: P
       </div>
     )
   }
-
-  const streamingPreviewsToDisplay = streamingPreviews.filter((preview) => {
-    // If a persistent message already ends with or contains this text, skip the preview
-    return !messages?.some(
-      (m) => m.role === preview.role && m.content.includes(preview.text.trim()),
-    )
-  })
-
   return (
     <div className="transcript">
       {messages?.map((msg) => (
