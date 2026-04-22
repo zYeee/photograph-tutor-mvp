@@ -361,7 +361,7 @@ async def entrypoint(ctx: JobContext) -> None:
         chat_ctx=chat_ctx,
         stt=STT(model="whisper-1"),
         llm=LLM(model="gpt-4o"),
-        tts=TTS(),
+        tts=TTS(speed=1.2),
         vad=VAD.load(),
         tools=[update_user_level, list_curriculum_topics, complete_current_topic, start_topic],
     )
