@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { getMessages, type Message } from '../api'
 import './Transcript.css'
 
@@ -21,6 +21,7 @@ export function Transcript({ sessionId, isConnected, streamingPreviews = [] }: P
     queryKey: ['messages', sessionId],
     queryFn: () => getMessages(sessionId),
     refetchInterval: isConnected ? 2000 : false,
+    placeholderData: keepPreviousData,
   })
 
   const hasContent = (messages && messages.length > 0) || streamingPreviews.length > 0

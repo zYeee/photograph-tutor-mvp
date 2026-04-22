@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { getSessions, type Session } from '../api'
 import { NewSessionModal } from './NewSessionModal'
 import './Sidebar.css'
@@ -22,6 +22,7 @@ export function Sidebar({ userId, activeSessionId, onSelectSession }: Props) {
   const { data: sessions, isLoading, isError } = useQuery<Session[]>({
     queryKey: ['sessions', userId],
     queryFn: () => getSessions(userId),
+    placeholderData: keepPreviousData,
   })
 
   function handleSessionCreated(session: Session) {
