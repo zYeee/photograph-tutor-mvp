@@ -7,16 +7,7 @@ Real-time voice AI photography tutor — monorepo with Python backend, React fro
 | Dependency | Minimum Version |
 |------------|-----------------|
 | Docker | 24.0 |
-| Docker Compose (plugin) | 2.20 |
-
-Verify with:
-
-```bash
-docker --version
-docker compose version
-```
-
-> Use `docker compose` (plugin syntax). The legacy `docker-compose` standalone binary is not supported.
+| Docker Compose | 2.20 |
 
 ## Environment Setup
 
@@ -26,7 +17,7 @@ docker compose version
    cp .env.example .env
    ```
 
-2. Open `.env` and fill in the values below:
+2. Open `.env` and fill in the values below (only OPENAI_API_KEY need to be set if it's ran in docker):
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
@@ -42,6 +33,7 @@ docker compose version
    ```bash
    make up
    ```
+4. open in browser [http://localhost:5173](http://localhost:5173)
 
 ## Service URLs
 
