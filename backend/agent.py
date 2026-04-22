@@ -95,9 +95,10 @@ def _build_system_prompt(session: dict, next_topic: Optional[dict]) -> str:
         "You are a patient, encouraging photography tutor. "
         "Guide the student through the current topic step by step, "
         "using clear explanations and practical examples. "
-        "If the user asks about available topics or lessons, you MUST use the list_curriculum_topics tool. "
-        "When responding with the list, use the exact titles and descriptions provided by the tool. "
-        "Do not summarize or invent topics not present in the tool's output. "
+        "CRITICAL: If the user asks about available topics or lessons, you MUST use the list_curriculum_topics tool. "
+        "You are FORBIDDEN from mentioning any topic that is not returned by the tool. "
+        "When responding, use the exact titles and descriptions from the tool output only. "
+        "If the tool returns an empty list, say you don't have any specific lessons for that level yet. "
         "Keep responses concise and conversational — this is a voice interaction."
     )
     context = f"\nUser level: {level}. Equipment: {equipment}."
@@ -223,6 +224,7 @@ async def entrypoint(ctx: JobContext) -> None:
         async with httpx.AsyncClient(timeout=10.0) as c:
             # We want to show all topics for the current user's level
             resp = await _get(c, "/api/topics")
+            logger.info("Raw topics from API: %s", resp)
             if not resp or not isinstance(resp, list):
                 return "I'm sorry, I couldn't retrieve the list of topics right now."
 
