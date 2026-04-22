@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.curriculum import TOPICS as CURRICULUM_TOPICS
 from app.database import get_db
-from app.models import Session, SessionTopic, Topic
+from app.models import Session, SessionTopic, Topic, UserTopicProgress
 
 router = APIRouter()
 
@@ -67,10 +67,14 @@ async def get_next_topic(session_id: int, db: AsyncSession = Depends(get_db)):
     if session is None:
         raise HTTPException(status_code=404, detail="Session not found")
 
+    # Use lifetime progress (across all sessions) so completed topics are never repeated.
     covered_result = await db.execute(
         select(Topic.slug)
-        .join(SessionTopic, SessionTopic.topic_id == Topic.id)
-        .where(SessionTopic.session_id == session_id)
+        .join(UserTopicProgress, UserTopicProgress.topic_id == Topic.id)
+        .where(
+            UserTopicProgress.user_id == session.user_id,
+            UserTopicProgress.status == "completed",
+        )
     )
     covered_slugs = {row[0] for row in covered_result.all()}
 

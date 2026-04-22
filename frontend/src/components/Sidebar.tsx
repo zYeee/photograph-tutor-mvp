@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { getSessions, type Session } from '../api'
 import { NewSessionModal } from './NewSessionModal'
+import { StudyJourneyModal } from './StudyJourneyModal'
 import './Sidebar.css'
 
 interface Props {
@@ -17,6 +18,7 @@ const MODE_LABELS: Record<string, string> = {
 
 export function Sidebar({ userId, activeSessionId, onSelectSession }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
+  const [studyJourneyOpen, setStudyJourneyOpen] = useState(false)
   const queryClient = useQueryClient()
 
   const { data: sessions, isLoading, isError } = useQuery<Session[]>({
@@ -35,9 +37,14 @@ export function Sidebar({ userId, activeSessionId, onSelectSession }: Props) {
     <aside className="sidebar">
       <div className="sidebar-header">
         <span className="sidebar-title">Photography Tutor</span>
-        <button className="btn-new-session" onClick={() => setModalOpen(true)}>
-          + New session
-        </button>
+        <div className="sidebar-header-actions">
+          <button className="btn-study-journey" onClick={() => setStudyJourneyOpen(true)}>
+            Study Journey
+          </button>
+          <button className="btn-new-session" onClick={() => setModalOpen(true)}>
+            + New Session
+          </button>
+        </div>
       </div>
 
       <div className="sidebar-list">
@@ -68,6 +75,13 @@ export function Sidebar({ userId, activeSessionId, onSelectSession }: Props) {
           userId={userId}
           onCreated={handleSessionCreated}
           onClose={() => setModalOpen(false)}
+        />
+      )}
+
+      {studyJourneyOpen && (
+        <StudyJourneyModal
+          userId={userId}
+          onClose={() => setStudyJourneyOpen(false)}
         />
       )}
     </aside>

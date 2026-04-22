@@ -10,6 +10,7 @@ from app.api.sessions import router as sessions_router
 from app.api.messages import router as messages_router
 from app.api.topics import router as topics_router
 from app.api.progress import router as progress_router
+from app.api.users import router as users_router
 
 
 async def _seed_curriculum() -> None:
@@ -81,6 +82,7 @@ app.include_router(sessions_router, prefix="/api")
 app.include_router(messages_router, prefix="/api")
 app.include_router(topics_router, prefix="/api")
 app.include_router(progress_router, prefix="/api")
+app.include_router(users_router, prefix="/api")
 
 
 @app.get("/health")

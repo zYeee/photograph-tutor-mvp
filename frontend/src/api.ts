@@ -65,3 +65,44 @@ export const closeSession = (sessionId: number) =>
 
 export const getToken = (room: string, identity = 'user') =>
   request<TokenResponse>(`/api/token?room=${encodeURIComponent(room)}&identity=${encodeURIComponent(identity)}`)
+
+export interface Topic {
+  id: number
+  slug: string
+  title: string
+  description: string
+  parent_id: number | null
+  difficulty: number
+  sort_order: number
+  level?: string
+  children?: Topic[]
+}
+
+export interface UserProgress {
+  id: number
+  user_id: number
+  topic_id: number
+  status: 'not_started' | 'in_progress' | 'completed'
+  proficiency: number | null
+  last_visited_at: string | null
+  updated_at: string | null
+  slug: string
+  title: string
+}
+
+export interface User {
+  id: number
+  email: string
+  display_name: string
+  created_at: string
+  updated_at: string
+}
+
+export const getTopics = () =>
+  request<Topic[]>('/api/topics')
+
+export const getUserProgress = (userId: number) =>
+  request<UserProgress[]>(`/api/users/${userId}/progress`)
+
+export const getUser = (userId: number) =>
+  request<User>(`/api/users/${userId}`)

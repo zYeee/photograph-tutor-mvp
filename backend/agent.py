@@ -252,13 +252,13 @@ async def entrypoint(ctx: JobContext) -> None:
     @function_tool
     async def complete_current_topic(
         _ctx: RunContext,
+        topic_slug: Annotated[str, "Exact slug of the topic the student just finished (e.g. 'golden-hour', 'aperture')"],
     ) -> str:
-        """Call this when the student has successfully learned the current topic and you're ready to move on."""
+        """Call this when the student has successfully learned a topic and you're ready to move on.
+        Always pass the slug of the topic that was actually taught in this conversation turn."""
         nonlocal current_topic_slug
-        if not current_topic_slug:
-            return "There is no active topic to complete right now."
 
-        slug_to_finish = current_topic_slug
+        slug_to_finish = topic_slug.strip().lower()
         logger.info("Agent calling complete_current_topic for: %s", slug_to_finish)
 
         await _finish_topic(session_id, user_id, slug_to_finish)
@@ -315,21 +315,27 @@ async def entrypoint(ctx: JobContext) -> None:
             for part in content_parts
         )
         if text:
-            asyncio.ensure_future(
-                _post(f"/api/sessions/{session_id}/messages", {"role": role, "content": text})
-            )
+            _spawn(_post(f"/api/sessions/{session_id}/messages", {"role": role, "content": text}))
 
     # ── topic completion on user disconnect ───────────────────────────────────
 
-    def _on_participant_disconnected(*_args) -> None:
-        if mode != "structured_learning" or not current_topic_slug:
-            return
-        asyncio.ensure_future(_finish_topic(session_id, user_id, current_topic_slug))
+    # Keep strong references so tasks aren't GC'd before they finish.
+    _background_tasks: set[asyncio.Task] = set()
+
+    def _spawn(coro) -> None:
+        t = asyncio.create_task(coro)
+        _background_tasks.add(t)
+        t.add_done_callback(_background_tasks.discard)
 
     async def _finish_topic(sid: int, uid: int, slug: str) -> None:
         await _post(f"/api/sessions/{sid}/topics/{slug}", {})
         await _put(f"/api/users/{uid}/progress/{slug}", {"status": "completed"})
         logger.info("Marked topic '%s' complete for session %d", slug, sid)
+
+    def _on_participant_disconnected(*_args) -> None:
+        if mode != "structured_learning" or not current_topic_slug:
+            return
+        _spawn(_finish_topic(session_id, user_id, current_topic_slug))
 
     ctx.room.on("participant_disconnected", _on_participant_disconnected)
 
@@ -337,7 +343,12 @@ async def entrypoint(ctx: JobContext) -> None:
 
     await agent_session.start(agent, room=ctx.room)
     agent_session.generate_reply(instructions=opening)
-    await asyncio.sleep(float("inf"))
+    try:
+        await asyncio.sleep(float("inf"))
+    finally:
+        # Drain any in-flight writes (e.g. topic completion triggered at disconnect)
+        if _background_tasks:
+            await asyncio.gather(*_background_tasks, return_exceptions=True)
 
 
 AGENT_NAME = "photo-tutor"
