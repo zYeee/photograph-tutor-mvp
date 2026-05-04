@@ -57,21 +57,58 @@ Real-time voice AI photography tutor: monorepo with Python backend, React fronte
 Five services run locally via Docker Compose. The browser connects to the React frontend, which communicates with the FastAPI backend over HTTP and with LiveKit over WebSocket/WebRTC. A separate LiveKit Agent process joins each room to handle AI voice processing.
 
 ```mermaid
-graph TD
-    Browser["Browser"]
-    Frontend["Frontend\n(Vite / React)"]
-    Backend["Backend\n(FastAPI)"]
-    Agent["Agent\n(LiveKit Agents SDK)"]
-    LiveKit["LiveKit Server"]
-    DB[("SQLite")]
+graph TB
+    %% 1. Client Layer
+    subgraph Client ["🖥️  Client"]
+        App["📱 Tutor App<br/><sub>React + Vite</sub>"]
+    end
 
-    Browser -->|"HTTP"| Frontend
-    Browser -->|"WebSocket / WebRTC"| LiveKit
-    Frontend -->|"HTTP REST"| Backend
-    Frontend -->|"LiveKit JS SDK"| LiveKit
-    Agent -->|"LiveKit Agents SDK"| LiveKit
-    Agent -->|"HTTP REST"| Backend
-    Backend -->|"SQL"| DB
+    %% 2. Backend Logic Layer
+    subgraph Backend ["⚙️  Backend Cluster"]
+        direction TB
+        API["🔌 API Server<br/><sub>FastAPI</sub>"]
+        Agent["🤖 Voice Agent<br/><sub>LiveKit Agent SDK</sub>"]
+    end
+
+    %% 3. Data & AI Layer
+    subgraph Services ["🗄️  Data & AI"]
+        direction TB
+        DB[("💾 SQLite<br/><sub>Database</sub>")]
+        AI["✨ OpenAI API<br/><sub>GPT-4o · Whisper</sub>"]
+    end
+
+    %% 4. Real-time Infrastructure
+    subgraph Infrastructure ["📡  Real-time Session"]
+        Livekit["🎙️ LiveKit Server<br/><sub>Voice Room</sub>"]
+    end
+
+    %% Connections
+    App -->|"HTTP REST"| API
+    App -. "WebRTC Audio" .-> Livekit
+
+    API -->|"Read / Write"| DB
+    API -->|"Dispatch agent"| Livekit
+
+    Agent -->|"Fetch context"| API
+    Agent -->|"STT · LLM · TTS"| AI
+    Agent <-->|"Audio stream"| Livekit
+
+    %% Node styles
+    classDef clientNode  fill:#dbeafe,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a,font-weight:bold
+    classDef backendNode fill:#dcfce7,stroke:#22c55e,stroke-width:2px,color:#14532d,font-weight:bold
+    classDef dataNode    fill:#fef9c3,stroke:#eab308,stroke-width:2px,color:#713f12,font-weight:bold
+    classDef infraNode   fill:#ede9fe,stroke:#8b5cf6,stroke-width:2px,color:#3b0764,font-weight:bold
+
+    class App clientNode
+    class API,Agent backendNode
+    class DB,AI dataNode
+    class Livekit infraNode
+
+    %% Subgraph backgrounds
+    style Client       fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a
+    style Backend      fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#14532d
+    style Services     fill:#fefce8,stroke:#eab308,stroke-width:2px,color:#713f12
+    style Infrastructure fill:#f5f3ff,stroke:#8b5cf6,stroke-width:2px,color:#3b0764
 ```
 
 ## Database Schema
