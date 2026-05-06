@@ -36,6 +36,7 @@ services:
     command: uv run python agent.py dev
     volumes:
       - ./backend:/app
+      - backend-venv:/app/.venv
     env_file:
       - .env
     environment:
