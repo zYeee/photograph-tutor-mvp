@@ -111,6 +111,46 @@ graph TB
     style Infrastructure fill:#f5f3ff,stroke:#8b5cf6,stroke-width:2px,color:#3b0764
 ```
 
+### Interaction Sequence
+
+The following diagram illustrates the lifecycle of a typical tutoring session, from initialization to real-time interaction and closure.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User (App)
+    participant B as Backend (API)
+    participant L as LiveKit Server
+    participant A as Voice Agent
+    participant AI as OpenAI
+
+    Note over U, B: 1. Session Initialization
+    U->>B: POST /api/sessions (Create)
+    U->>B: GET /api/token (Join Request)
+    B->>L: CreateAgentDispatch (Assign Task)
+    L-->>A: JobAssignment (WebSocket)
+    A->>L: Connect Room (WebRTC)
+    A->>B: GET /api/sessions/lookup (Context)
+    B-->>U: Return Token & URL
+
+    Note over U, A: 2. Real-time Interaction
+    U->>L: Connect Room (WebRTC)
+    U->>L: Publish Audio (Speech)
+    L->>A: Forward Audio Stream
+    A->>AI: STT (Whisper) -> LLM (GPT) -> TTS
+    A->>L: Publish Audio + Text (Transcription)
+    L->>U: Forward Audio + Text
+    A-->>B: POST /api/messages (Persist)
+    A-->>B: PUT /api/progress (Sync)
+
+    Note over U, B: 3. Session Closure
+    U->>B: PATCH /api/sessions/close
+    U->>L: Disconnect
+    L->>A: Notify Departure
+    A->>A: Drain background tasks
+    A-->>L: Exit Room
+```
+
 ## Database Schema
 
 The six critical tables. Foreign keys use crow's-foot notation (one-to-many: `||--o{`, one-to-one: `||--||`).
